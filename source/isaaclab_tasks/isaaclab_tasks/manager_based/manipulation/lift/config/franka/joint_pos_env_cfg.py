@@ -7,6 +7,7 @@ from isaaclab.assets import RigidObjectCfg
 from isaaclab.sensors import FrameTransformerCfg
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
+from isaaclab.sim.schemas.schemas_cfg import MassPropertiesCfg,CollisionPropertiesCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
@@ -43,13 +44,17 @@ class FrankaCubeLiftEnvCfg(LiftEnvCfg):
         # Set the body name for the end effector
         self.commands.object_pose.body_name = "panda_hand"
 
-        # Set Cube as object
+        # Set  as object
         self.scene.object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
+            # init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.00], rot=[1, 0, 0, 0]),
+
             spawn=UsdFileCfg(
-                usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
-                scale=(0.8, 0.8, 0.8),
+                # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
+                usd_path=f"/home/pbd/IsaacLab/scripts/reinforcement_learning/rl_games/my_data/No19_koala_no_march/mesh_refined.usd",
+                scale=(1, 1, 1),
+                # scale=(0.8, 0.8, 0.8),
                 rigid_props=RigidBodyPropertiesCfg(
                     solver_position_iteration_count=16,
                     solver_velocity_iteration_count=1,
@@ -58,6 +63,15 @@ class FrankaCubeLiftEnvCfg(LiftEnvCfg):
                     max_depenetration_velocity=5.0,
                     disable_gravity=False,
                 ),
+                # mass_props=MassPropertiesCfg(
+                #     mass=0.5,
+                #     density=1000,
+                # ),
+                # collision_props=CollisionPropertiesCfg(
+                #     collision_enabled=True,
+                # )
+
+
             ),
         )
 
@@ -74,7 +88,9 @@ class FrankaCubeLiftEnvCfg(LiftEnvCfg):
                     prim_path="{ENV_REGEX_NS}/Robot/panda_hand",
                     name="end_effector",
                     offset=OffsetCfg(
+                        # pos=[0.0, 0.0, 0.1034], #cube default
                         pos=[0.0, 0.0, 0.1034],
+
                     ),
                 ),
             ],

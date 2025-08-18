@@ -9,10 +9,11 @@
 
 import argparse
 import rclpy
+import numpy as np
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from isaaclab.app import AppLauncher
-
+from rclpy.qos import QoSProfile
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Play a checkpoint of an RL agent from RL-Games.")
 parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
@@ -49,7 +50,7 @@ simulation_app = app_launcher.app
 
 """Rest everything follows."""
 
-
+from builtin_interfaces.msg import Time
 import gymnasium as gym
 import math
 import os
@@ -69,7 +70,7 @@ from isaaclab_rl.rl_games import RlGamesGpuEnv, RlGamesVecEnvWrapper
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
-
+PUB_HZ = 100
 # PLACEHOLDER: Extension template (do not remove this comment)
 
 
@@ -157,6 +158,7 @@ def main():
     agent.reset()
 
     dt = env.unwrapped.step_dt
+    dt= 0.7
 
 
 
@@ -170,15 +172,34 @@ def main():
     class JointStatePublisher(Node):
         def __init__(self):
             super().__init__('joint_state_publisher')
-            self.publisher_ = self.create_publisher(JointState, '/joint_states', 10)
+            self.publisher_ = self.create_publisher(JointState, '/joint_states_isaac', 10)
             self.joint_names = [
                 "fr3_joint1", "fr3_joint2", "fr3_joint3", 
                 "fr3_joint4", "fr3_joint5", "fr3_joint6", "fr3_joint7"
             ]
+            self.subscriber_ = self.create_subscription(
+                JointState,
+                '/Fr3_labo/joint_states',
+                self.joint_states_callback,
+                10
+            )
+            self.last_received_positions = None  # stocke la dernière position reçue
+            self.received_once = False 
+            # self.timer = self.create_timer(1.0 / PUB_HZ, self.timer_callback)
+        def joint_states_callback(self, msg: JointState):
+            if all(name in msg.name for name in self.joint_names):
+                positions = []
+                for joint in self.joint_names:
+                    idx = msg.name.index(joint)
+                    positions.append(msg.position[idx])
+                self.last_received_positions = positions
+                self.received_once = True
+                self.get_logger().info(f"Positions initiales reçues: {positions}")
+
 
         def publish_actions(self, actions_tensor):
             msg = JointState()
-            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.header.stamp = Time(sec=0, nanosec=0)
             msg.name = self.joint_names
             # 7 first 1 ok
             msg.position = [float(x) for x in actions_tensor[0][:7].tolist()]
@@ -186,14 +207,51 @@ def main():
 
 
             self.publisher_.publish(msg)
-            self.get_logger().info(f"Published joint positions: {msg.position}")
+            # self.get_logger().info(f"Published joint positions: {msg.position}")
 
 
 
 
     joint_state_publisher = JointStatePublisher()
+    timeout_sec = 5.0
+    start_wait = time.time()
+    while rclpy.ok() and not joint_state_publisher.received_once:
+        rclpy.spin_once(joint_state_publisher, timeout_sec=0.1)
+        if time.time() - start_wait > timeout_sec:
+            print("[WARNING] Timeout: pas de positions initiales reçues sur /Fr3_labo/joint_states, on continue.")
+            break
+
+
+
+
+
+
+
+
     # reset environment
     obs = env.reset()
+    if joint_state_publisher.received_once:
+        print("[INFO] Injection des positions initiales reçues dans l'observation")
+        initial_positions = torch.tensor([joint_state_publisher.last_received_positions], dtype=torch.float32)
+        if isinstance(obs, dict) and "obs" in obs:
+            obs_data = obs["obs"]
+            if isinstance(obs_data, torch.Tensor):
+                # On modifie directement le tensor en place
+                obs_data[:7] = initial_positions[0]
+                obs["obs"] = obs_data
+            else:
+                # Ici obs_data est un tableau numpy (ou autre)
+                obs_data_np = np.array(obs_data, copy=False)
+                obs_data_np[:7] = initial_positions[0].cpu().numpy()
+                obs["obs"] = obs_data_np
+
+    
+
+
+
+
+
+
     print ("obs 1:",obs,"\n")
     if isinstance(obs, dict):
         obs = obs["obs"]
@@ -206,13 +264,21 @@ def main():
     # simulate environment
     # note: We simplified the logic in rl-games player.py (:func:`BasePlayer.run()`) function in an
     #   attempt to have complete control over environment stepping. However, this removes other
-    #   operations such as masking that is used for multi-agent learning by RL-Games.
+   
+ #   operations such as masking that is used for multi-agent learning by RL-Games.
+
+    last_pub_time = time.time()
     while simulation_app.is_running():
         start_time = time.time()
         # run everything in inference mode
+        
         with torch.inference_mode():
             # convert obs to agent format
+            now = time.time()
+            # if now - last_pub_time >= 1.0 / PUB_HZ:
             joint_state_publisher.publish_actions(obs)
+                # last_pub_time = now
+
             obs = agent.obs_to_torch(obs)
             
 

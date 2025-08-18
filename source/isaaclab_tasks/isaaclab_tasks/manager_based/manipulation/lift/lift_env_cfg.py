@@ -45,7 +45,7 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # Table
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[0.5, 0, 0], rot=[0.707, 0, 0, 0.707]),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[0.5, 0, 0.005], rot=[0.707, 0, 0, 0.707]),
         spawn=UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd"),
     )
 
@@ -100,11 +100,12 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        joint_pos = ObsTerm(func=mdp.joint_pos)#edit olivier
         joint_vel = ObsTerm(func=mdp.joint_vel_rel)
         object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
-        target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
+        # target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
         actions = ObsTerm(func=mdp.last_action)
+
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -124,7 +125,7 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.1, 0.1), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
+            "pose_range": {"x": (-0.1, 0.1), "y": (-0.25, 0.25), "z": (0.00, 0.00)},
             "velocity_range": {},
             "asset_cfg": SceneEntityCfg("object", body_names="Object"),
         },
@@ -133,23 +134,23 @@ class EventCfg:
 
 @configclass
 class RewardsCfg:
-    """Reward terms for the MDP."""
+  
 
     reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=1.0)
 
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04}, weight=15.0)
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.16}, weight=15.0)#bqse 0.04
 
-    object_goal_tracking = RewTerm(
-        func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.04, "command_name": "object_pose"},
-        weight=16.0,
-    )
+    # object_goal_tracking = RewTerm(
+    #     func=mdp.object_goal_distance,
+    #     params={"std": 0.3, "minimal_height": 0.04, "command_name": "object_pose"},#base 0.04
+    #     weight=16.0,#edit def 16
+    # )
 
-    object_goal_tracking_fine_grained = RewTerm(
-        func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},
-        weight=5.0,
-    )
+    # object_goal_tracking_fine_grained = RewTerm(
+    #     func=mdp.object_goal_distance,
+    #     params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},#base 0.04
+    #     weight=5.0,
+    # )
 
     # action penalty
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
@@ -159,17 +160,18 @@ class RewardsCfg:
         weight=-1e-4,
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
+    
 
-
+@configclass
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
-    )
+    object_dropping = DoneTerm( func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")} )
+    
+
 
 
 @configclass
@@ -210,7 +212,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 2
-        self.episode_length_s = 5.0
+        self.episode_length_s = 8.0#def 5
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
         self.sim.render_interval = self.decimation

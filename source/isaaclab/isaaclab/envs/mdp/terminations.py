@@ -72,6 +72,8 @@ def root_height_below_minimum(
     return asset.data.root_pos_w[:, 2] < minimum_height
 
 
+
+
 """
 Joint terminations.
 """
