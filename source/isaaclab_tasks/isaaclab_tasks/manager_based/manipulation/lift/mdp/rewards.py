@@ -37,7 +37,7 @@ def object_ee_distance(
     ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
     # Target object position: (num_envs, 3)
     cube_pos_w = object.data.root_pos_w
-    cube_pos_w[:,2] += 0.12 + 0.05# 5cm above test
+    # cube_pos_w[:,2] += 0.12 + 0.05# 5cm above test
     # End-effector position: (num_envs, 3)
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
     # Distance of the end-effector to the object: (num_envs,)

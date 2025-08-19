@@ -47,14 +47,14 @@ class FrankaCubeLiftEnvCfg(LiftEnvCfg):
         # Set  as object
         self.scene.object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/Object",
-            # init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.00], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
+            # init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.00], rot=[1, 0, 0, 0]),
 
             spawn=UsdFileCfg(
-                # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
-                usd_path=f"/home/pbd/IsaacLab/scripts/reinforcement_learning/rl_games/my_data/No19_koala_no_march/mesh_refined.usd",
-                scale=(1, 1, 1),
-                # scale=(0.8, 0.8, 0.8),
+                usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
+                # usd_path=f"/home/pbd/IsaacLab/scripts/reinforcement_learning/rl_games/my_data/No19_koala_no_march/mesh_refined.usd",
+                # scale=(1, 1, 1),
+                scale=(0.8, 0.8, 0.8),
                 rigid_props=RigidBodyPropertiesCfg(
                     solver_position_iteration_count=16,
                     solver_velocity_iteration_count=1,

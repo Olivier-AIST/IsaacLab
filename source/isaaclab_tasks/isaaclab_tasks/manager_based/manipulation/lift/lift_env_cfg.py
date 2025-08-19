@@ -103,7 +103,7 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos)#edit olivier
         joint_vel = ObsTerm(func=mdp.joint_vel_rel)
         object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
-        # target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
+        target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
         actions = ObsTerm(func=mdp.last_action)
 
 
@@ -138,19 +138,19 @@ class RewardsCfg:
 
     reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=1.0)
 
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.16}, weight=15.0)#bqse 0.04
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04}, weight=15.0)#bqse 0.04
 
-    # object_goal_tracking = RewTerm(
-    #     func=mdp.object_goal_distance,
-    #     params={"std": 0.3, "minimal_height": 0.04, "command_name": "object_pose"},#base 0.04
-    #     weight=16.0,#edit def 16
-    # )
+    object_goal_tracking = RewTerm(
+        func=mdp.object_goal_distance,
+        params={"std": 0.3, "minimal_height": 0.04, "command_name": "object_pose"},#base 0.04
+        weight=16.0,#edit def 16
+    )
 
-    # object_goal_tracking_fine_grained = RewTerm(
-    #     func=mdp.object_goal_distance,
-    #     params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},#base 0.04
-    #     weight=5.0,
-    # )
+    object_goal_tracking_fine_grained = RewTerm(
+        func=mdp.object_goal_distance,
+        params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},#base 0.04
+        weight=5.0,
+    )
 
     # action penalty
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
